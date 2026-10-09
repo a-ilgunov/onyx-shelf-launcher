@@ -5,59 +5,73 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONObject
 
-enum class SortMode(val label: String) {
-    TITLE("Название"),
-    AUTHOR("Автор"),
-    SERIES("Серия"),
-    ADDED("Дата добавления"),
-    OPENED("Последнее открытие"),
-    PROGRESS("Прогресс"),
-    SIZE("Размер файла"),
+enum class SortMode(private val ru: String, private val en: String) {
+    TITLE("Название", "Title"),
+    AUTHOR("Автор", "Author"),
+    SERIES("Серия", "Series"),
+    ADDED("Дата добавления", "Date added"),
+    OPENED("Последнее открытие", "Last opened"),
+    PROGRESS("Прогресс", "Progress"),
+    SIZE("Размер файла", "File size"),
+    ;
+
+    val label: String get() = L(ru, en)
 }
 
 /** Как показывать книги в библиотеке. */
-enum class ViewMode(val label: String) {
-    COVERS_HUGE("Крупные обложки"),
-    COVERS_LARGE("Обычные обложки"),
-    COVERS_SMALL("Мелкие обложки"),
-    COVERS_ONLY("Только обложки"),
-    LIST("Список"),
-    DETAILED("Подробный список"),
-    COMPACT("Компактный список"),
+enum class ViewMode(private val ru: String, private val en: String) {
+    COVERS_HUGE("Крупные обложки", "Large covers"),
+    COVERS_LARGE("Обычные обложки", "Normal covers"),
+    COVERS_SMALL("Мелкие обложки", "Small covers"),
+    COVERS_ONLY("Только обложки", "Covers only"),
+    LIST("Список", "List"),
+    DETAILED("Подробный список", "Detailed list"),
+    COMPACT("Компактный список", "Compact list"),
     ;
 
     val covers: Boolean get() = this == COVERS_HUGE || this == COVERS_LARGE || this == COVERS_SMALL || this == COVERS_ONLY
+
+    val label: String get() = L(ru, en)
 }
 
-enum class ReadStatus(val label: String) {
-    NEW("Не начатые"),
-    READING("Читаю"),
-    FINISHED("Прочитанные"),
+enum class ReadStatus(private val ru: String, private val en: String) {
+    NEW("Не начатые", "Not started"),
+    READING("Читаю", "Reading"),
+    FINISHED("Прочитанные", "Finished"),
+    ;
+
+    val label: String get() = L(ru, en)
 }
 
 /** Плитки, которые можно поставить на главный экран. */
-enum class HomeWidget(val label: String) {
-    FINISHED("Прочитано книг"),
-    LIBRARY("Библиотека"),
-    TODAY("Сегодня"),
-    WEEK("За неделю"),
-    YEAR("Прочитано в этом году"),
-    READING("Читаю сейчас"),
-    WANT("Хочу прочитать"),
-    CONTINUE("Продолжить серию"),
-    NONE("Пусто"),
+enum class HomeWidget(private val ru: String, private val en: String) {
+    FINISHED("Прочитано книг", "Books finished"),
+    LIBRARY("Библиотека", "Library"),
+    TODAY("Сегодня", "Today"),
+    WEEK("За неделю", "This week"),
+    YEAR("Прочитано в этом году", "Finished this year"),
+    READING("Читаю сейчас", "Currently reading"),
+    WANT("Хочу прочитать", "Want to read"),
+    CONTINUE("Продолжить серию", "Continue the series"),
+    NONE("Пусто", "Empty"),
+    ;
+
+    val label: String get() = L(ru, en)
 }
 
 /** Что показывать на полке внизу главного экрана. */
-enum class HomeShelf(val label: String) {
-    RECENT("Недавние"),
-    CONTINUE("Продолжить серию"),
-    WANT("Хочу прочитать"),
-    NEW("Новые поступления"),
-    NONE("Не показывать"),
+enum class HomeShelf(private val ru: String, private val en: String) {
+    RECENT("Недавние", "Recent"),
+    CONTINUE("Продолжить серию", "Continue the series"),
+    WANT("Хочу прочитать", "Want to read"),
+    NEW("Новые поступления", "New arrivals"),
+    NONE("Не показывать", "Don't show"),
+    ;
+
+    val label: String get() = L(ru, en)
 }
 
-private const val DEFAULT_SHELVES = """{"Хочу прочитать":[],"Избранное":[]}"""
+private const val DEFAULT_SHELVES = """{L("Хочу прочитать", "Want to read"):[],"Избранное":[]}"""
 
 class Prefs(context: Context) {
     private val sp = context.getSharedPreferences("prefs", Context.MODE_PRIVATE)
@@ -76,6 +90,10 @@ class Prefs(context: Context) {
         sp.all.keys.filter { it.startsWith("reader_") }.forEach { e.remove(it) }
         e.apply()
     }
+
+    var english: Boolean
+        get() = sp.getBoolean("english", false)
+        set(v) = sp.edit().putBoolean("english", v).apply()
 
     var darkTheme: Boolean
         get() = sp.getBoolean("dark", false)

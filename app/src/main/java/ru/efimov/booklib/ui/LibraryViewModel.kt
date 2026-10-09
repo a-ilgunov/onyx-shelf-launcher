@@ -1,5 +1,7 @@
 package ru.efimov.booklib.ui
 
+import ru.efimov.booklib.data.L
+import ru.efimov.booklib.data.Lang
 import android.app.Application
 import android.content.BroadcastReceiver
 import android.database.ContentObserver
@@ -36,20 +38,26 @@ import ru.efimov.booklib.data.ViewMode
 import java.io.File
 
 /** Разделы нижней панели, как у лаунчера ONYX. */
-enum class Section(val label: String) {
-    LIBRARY("Библиотека"),
-    APPS("Приложения"),
-    STORAGE("Память"),
-    SETTINGS("Настройки"),
+enum class Section(private val ru: String, private val en: String) {
+    LIBRARY("Библиотека", "Library"),
+    APPS("Приложения", "Apps"),
+    STORAGE("Память", "Storage"),
+    SETTINGS("Настройки", "Settings"),
+    ;
+
+    val label: String get() = L(ru, en)
 }
 
-enum class Tab(val label: String) {
-    ALL("Все книги"),
-    AUTHORS("Авторы"),
-    SERIES("Серии"),
-    GENRES("Жанры"),
-    RECENT("Недавние"),
-    SHELVES("Полки"),
+enum class Tab(private val ru: String, private val en: String) {
+    ALL("Все книги", "All books"),
+    AUTHORS("Авторы", "Authors"),
+    SERIES("Серии", "Series"),
+    GENRES("Жанры", "Genres"),
+    RECENT("Недавние", "Recent"),
+    SHELVES("Полки", "Shelves"),
+    ;
+
+    val label: String get() = L(ru, en)
 }
 
 /** Открытая группа: конкретный автор, серия или жанр. */
@@ -299,6 +307,11 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         prefs.filterLangs = filterLangs
     }
 
+    fun toggleLanguage() {
+        Lang.english = !Lang.english
+        prefs.english = Lang.english
+    }
+
     fun toggleDark() {
         Palette.dark = !Palette.dark
         prefs.darkTheme = Palette.dark
@@ -346,8 +359,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun chooseShelf(book: Book) {
         val names = shelves.keys.toList()
         overlay = Overlay.Choice(
-            "На полку",
-            names.map { if (book.path in shelves[it].orEmpty()) "✓  $it" else it } + "+ Новая полка…",
+            L("На полку", "Add to shelf"),
+            names.map { if (book.path in shelves[it].orEmpty()) "✓  ${shelfTitle(it)}" else shelfTitle(it) } + L("+ Новая полка…", "+ New shelf…"),
             -1,
         ) { i -> if (i < names.size) toggleOnShelf(names[i], book) else overlay = Overlay.NewShelf(book) }
     }
@@ -358,7 +371,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         if (seriesFix != null) return
         val ctx: Application = getApplication()
         if (!isOnline()) {
-            Toast.makeText(ctx, "Нет интернета — включите Wi-Fi", Toast.LENGTH_LONG).show()
+            Toast.makeText(ctx, L("Нет интернета — включите Wi-Fi", "No internet — turn on Wi-Fi"), Toast.LENGTH_LONG).show()
             return
         }
         // Комиксы и документы Фантлабу неизвестны — проверяем книги с автором
@@ -377,7 +390,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             // Полный состав циклов — чтобы показывать, каких книг серии нет на устройстве
             library.saveCycles(api.cycles)
             seriesFix = null
-            Toast.makeText(ctx, if (found.isEmpty()) "Серии уже в порядке" else "Уточнены серии у ${booksWord(found.size)}", Toast.LENGTH_LONG).show()
+            Toast.makeText(ctx, if (found.isEmpty()) L("Серии уже в порядке", "Series are already fine") else L("Уточнены серии у ${booksWord(found.size)}", "Series updated for ${booksWord(found.size)}"), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -389,7 +402,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val file = withContext(Dispatchers.IO) { ru.efimov.booklib.data.OnlineCovers.download(getApplication(), url) }
             if (file == null) {
-                Toast.makeText(getApplication(), "Не удалось скачать обложку", Toast.LENGTH_SHORT).show()
+                Toast.makeText(getApplication(), L("Не удалось скачать обложку", "Couldn't download the cover"), Toast.LENGTH_SHORT).show()
             } else {
                 setCover(book, file)
             }
@@ -453,10 +466,10 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             if (Readers.launch(ctx, book, app.pkg)) prefs.markOpened(book.path)
         }
         when {
-            apps.isEmpty() -> Toast.makeText(ctx, "Нет приложения для формата ${book.format.uppercase()}", Toast.LENGTH_LONG).show()
+            apps.isEmpty() -> Toast.makeText(ctx, L("Нет приложения для формата ${book.format.uppercase()}", "No app for ${book.format.uppercase()}"), Toast.LENGTH_LONG).show()
             apps.size == 1 && !choose -> launchWith(apps[0])
             else -> overlay = Overlay.Choice(
-                if (choose) "Открыть с помощью" else "Чем открывать ${book.format.uppercase()}",
+                if (choose) L("Открыть с помощью", "Open with") else L("Чем открывать ${book.format.uppercase()}", "Open ${book.format.uppercase()} with"),
                 apps.map { it.label },
                 apps.indexOfFirst { it.pkg == prefs.readerFor(book.format) },
             ) { launchWith(apps[it]) }
@@ -482,7 +495,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             if (library.setCustomCover(book, image)) {
                 overlay = library.books.value.firstOrNull { it.path == book.path }?.let { Overlay.Details(it) }
             } else {
-                Toast.makeText(getApplication(), "Не получилось прочитать картинку", Toast.LENGTH_SHORT).show()
+                Toast.makeText(getApplication(), L("Не получилось прочитать картинку", "Couldn't read the image"), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -531,8 +544,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 fun langOf(book: Book): String = book.lang?.lowercase()?.take(2)?.takeIf { it.isNotBlank() } ?: "—"
 
 fun langLabel(code: String): String = when (code) {
-    "ru" -> "Русский"; "en" -> "Английский"; "uk" -> "Украинский"; "be" -> "Белорусский"
-    "de" -> "Немецкий"; "fr" -> "Французский"; "es" -> "Испанский"; "it" -> "Итальянский"
-    "ja" -> "Японский"; "zh" -> "Китайский"; "pl" -> "Польский"; "—" -> "Не указан"
+    "ru" -> L("Русский", "Russian"); "en" -> L("Английский", "English"); "uk" -> L("Украинский", "Ukrainian"); "be" -> L("Белорусский", "Belarusian")
+    "de" -> L("Немецкий", "German"); "fr" -> L("Французский", "French"); "es" -> L("Испанский", "Spanish"); "it" -> L("Итальянский", "Italian")
+    "ja" -> L("Японский", "Japanese"); "zh" -> L("Китайский", "Chinese"); "pl" -> L("Польский", "Polish"); "—" -> L("Не указан", "Not specified")
     else -> code.uppercase()
 }

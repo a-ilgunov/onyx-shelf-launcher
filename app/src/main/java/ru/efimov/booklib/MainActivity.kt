@@ -1,5 +1,7 @@
 package ru.efimov.booklib
 
+import ru.efimov.booklib.data.L
+import ru.efimov.booklib.data.Lang
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -45,6 +47,7 @@ class MainActivity : ComponentActivity() {
         StrictMode.setVmPolicy(StrictMode.VmPolicy.Builder().build())
         // Тема — до первого кадра, чтобы не мигнуть светлым экраном
         Palette.dark = ru.efimov.booklib.data.Prefs(this).darkTheme
+        ru.efimov.booklib.data.Lang.english = ru.efimov.booklib.data.Prefs(this).english
 
         setContent {
             EinkTheme {
@@ -100,10 +103,10 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("Нужен доступ к файлам", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Text(L("Нужен доступ к файлам", "File access needed"), fontSize = 26.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(16.dp))
             Text(
-                "Чтобы найти книги в памяти устройства, разрешите приложению доступ ко всем файлам.",
+                L("Чтобы найти книги в памяти устройства, разрешите приложению доступ ко всем файлам.", "To find books on the device, allow the app to access all files."),
                 fontSize = 18.sp, textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(24.dp))
@@ -111,7 +114,7 @@ class MainActivity : ComponentActivity() {
                 startActivity(
                     Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:$packageName"))
                 )
-            }) { Text("Открыть настройки", fontSize = 18.sp) }
+            }) { Text(L("Открыть настройки", "Open settings"), fontSize = 18.sp) }
         }
     }
 }

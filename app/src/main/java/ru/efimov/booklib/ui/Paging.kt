@@ -1,5 +1,6 @@
 package ru.efimov.booklib.ui
 
+import ru.efimov.booklib.data.L
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
@@ -120,7 +121,7 @@ fun <T> PagedGrid(
     flexible: Boolean = false,
     rows: Int? = null,
     cols: Int? = null,
-    empty: String = "Пусто",
+    empty: String = L("Пусто", "Empty"),
     leading: (@Composable () -> Unit)? = null,
     prefetch: (suspend (List<T>) -> Unit)? = null,
     cell: @Composable (T) -> Unit,

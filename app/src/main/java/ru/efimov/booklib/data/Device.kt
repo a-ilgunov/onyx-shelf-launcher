@@ -13,7 +13,7 @@ data class Progress(val current: Int, val total: Int, val lastAccess: Long, val 
     val fraction: Float get() = if (total > 0) (current.toFloat() / total).coerceIn(0f, 1f) else 0f
     val finished: Boolean get() = status == 2 || (total > 0 && current >= total)
     val percent: Int get() = (fraction * 100).toInt()
-    val label: String get() = if (finished) "Прочитано" else "$percent%"
+    val label: String get() = if (finished) L("Прочитано", "Finished") else "$percent%"
 }
 
 object OnyxReading {

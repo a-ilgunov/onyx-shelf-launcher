@@ -1,5 +1,6 @@
 package ru.efimov.booklib.ui
 
+import ru.efimov.booklib.data.L
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -21,7 +22,7 @@ object Readers {
     fun appsFor(ctx: Context, book: Book): List<ReaderApp> = query(ctx, intentFor(book))
 
     fun label(ctx: Context, pkg: String?): String {
-        if (pkg == null) return "Запоминать последний выбор"
+        if (pkg == null) return L("Запоминать последний выбор", "Remember last choice")
         val pm = ctx.packageManager
         return runCatching { pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString() }.getOrDefault(pkg)
     }

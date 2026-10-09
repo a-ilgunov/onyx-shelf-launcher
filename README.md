@@ -6,7 +6,7 @@ A minimalist, iOS‑inspired home screen and book library for **ONYX BOOX** e‑
 
 Built and tested on **BOOX Kon‑Tiki 5** (Android 11). It should work on other BOOX devices with Android 11+.
 
-**[⬇ Download APK](https://raw.githubusercontent.com/a-ilgunov/onyx-shelf-launcher/main/apk/onyx-shelf-launcher.apk)** · v1.15
+**[⬇ Download APK](https://raw.githubusercontent.com/a-ilgunov/onyx-shelf-launcher/main/apk/onyx-shelf-launcher.apk)** · v1.16
 
 <p align="center">
   <img src="docs/screenshots/home.png" width="32%" alt="Home screen">
@@ -44,7 +44,8 @@ Built and tested on **BOOX Kon‑Tiki 5** (Android 11). It should work on other 
 
 **Also**
 - Apps grid, file browser, settings — all in the same style.
-- Light and dark theme (covers are never inverted).
+- Russian and English interface, switched in settings without a restart.
+- Light and dark theme (covers are never inverted). In the dark theme the white BOOX status bar is replaced with a matching line showing time and battery.
 - Duplicate finder: hide extra copies of the same book (files are not deleted).
 - Battery friendly: zero redraws and ~0% CPU while idle, no background work, no timers.
 
@@ -61,7 +62,7 @@ Built and tested on **BOOX Kon‑Tiki 5** (Android 11). It should work on other 
 
 ## Installation
 
-1. **[Download onyx-shelf-launcher.apk](https://raw.githubusercontent.com/a-ilgunov/onyx-shelf-launcher/main/apk/onyx-shelf-launcher.apk)** (v1.15, 3.3 MB) — a ready-to-install build, no compiling needed. It is also in the [`apk`](apk) folder.
+1. **[Download onyx-shelf-launcher.apk](https://raw.githubusercontent.com/a-ilgunov/onyx-shelf-launcher/main/apk/onyx-shelf-launcher.apk)** (v1.16, 3.2 MB) — a ready-to-install build, no compiling needed. It is also in the [`apk`](apk) folder.
 2. Copy it to the device (USB cable, BooxDrop or any cloud) and open it from **Storage** to install. Allow installing from unknown sources if asked.
    Or with a computer: `adb install onyx-shelf-launcher.apk`
 3. Open **Моя библиотека** (*My library*) and grant **All files access** when prompted — it is needed to find books in storage.

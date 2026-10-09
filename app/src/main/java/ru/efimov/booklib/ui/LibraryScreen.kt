@@ -1,5 +1,7 @@
 package ru.efimov.booklib.ui
 
+import ru.efimov.booklib.data.L
+import ru.efimov.booklib.data.Lang
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,6 +70,7 @@ import java.util.Locale
 private val collator: Collator = Collator.getInstance(Locale("ru")).apply { strength = Collator.SECONDARY }
 
 fun booksWord(n: Int): String {
+    if (Lang.english) return if (n == 1) "1 book" else "$n books"
     val m10 = n % 10
     val m100 = n % 100
     val w = when {
@@ -112,6 +115,13 @@ private fun stackify(list: List<Book>): List<Any> {
     return out
 }
 
+/** Стандартные полки показываются на языке интерфейса; свои — как назвали. */
+fun shelfTitle(name: String): String = when (name) {
+    "Хочу прочитать" -> L("Хочу прочитать", "Want to read")
+    "Избранное" -> L("Избранное", "Favorites")
+    else -> name
+}
+
 /** Полка: автоматическая («Продолжить серию»…) или своя. */
 data class Shelf(val key: String, val title: String, val subtitle: String, val books: List<Book>, val custom: Boolean)
 
@@ -138,13 +148,13 @@ private fun shelvesFor(vm: LibraryViewModel, books: List<Book>, recent: Map<Stri
 
     val byPath = books.associateBy { it.path }
     val auto = listOf(
-        Shelf("auto:continue", "Продолжить серию", "следующие книги в начатых сериях", cont, false),
-        Shelf("auto:reading", "Читаю сейчас", "начатые и не дочитанные", reading, false),
-        Shelf("auto:new", "Новые поступления", "добавлены за последний месяц", fresh, false),
-        Shelf("auto:abandoned", "Брошенные", "открывали больше месяца назад, прочитано меньше 30%", abandoned, false),
-        Shelf("auto:year", "Прочитано в $year", "дочитанные в этом году", thisYear, false),
+        Shelf("auto:continue", L("Продолжить серию", "Continue the series"), L("следующие книги в начатых сериях", "next books in started series"), cont, false),
+        Shelf("auto:reading", L("Читаю сейчас", "Currently reading"), L("начатые и не дочитанные", "started, not finished"), reading, false),
+        Shelf("auto:new", L("Новые поступления", "New arrivals"), L("добавлены за последний месяц", "added in the last month"), fresh, false),
+        Shelf("auto:abandoned", L("Брошенные", "Abandoned"), L("открывали больше месяца назад, прочитано меньше 30%", "opened over a month ago, under 30% read"), abandoned, false),
+        Shelf("auto:year", L("Прочитано в $year", "Finished in $year"), L("дочитанные в этом году", "finished this year"), thisYear, false),
     )
-    val custom = vm.shelves.map { (name, paths) -> Shelf("shelf:$name", name, "своя полка", paths.mapNotNull { byPath[it] }, true) }
+    val custom = vm.shelves.map { (name, paths) -> Shelf("shelf:$name", shelfTitle(name), L("своя полка", "your shelf"), paths.mapNotNull { byPath[it] }, true) }
     return auto + custom
 }
 
@@ -165,7 +175,7 @@ private fun List<Book>.sortedFor(vm: LibraryViewModel, recent: Map<String, Long>
 private fun Book.authorKeys(): List<String> =
     if (authors.isEmpty()) listOf(Author.NO_AUTHOR.lowercase()) else authors.map { it.key }
 
-fun Book.genreNames(): List<String> = genres.map { Genres.name(it) }.distinct().ifEmpty { listOf("Без жанра") }
+fun Book.genreNames(): List<String> = genres.map { Genres.name(it) }.distinct().ifEmpty { listOf(L("Без жанра", "No genre")) }
 
 @Composable
 fun LibraryScreen(vm: LibraryViewModel) {
@@ -248,13 +258,13 @@ fun LibraryScreen(vm: LibraryViewModel) {
             vm.tab == Tab.RECENT -> {
                 val list = books.filter { vm.lastOpened(it.path, recent) > 0 }
                     .sortedByDescending { vm.lastOpened(it.path, recent) }
-                BookPages(vm, list, vm.mainKey, open, details, home, "Здесь появятся книги, которые вы открывали")
+                BookPages(vm, list, vm.mainKey, open, details, home, L("Здесь появятся книги, которые вы открывали", "Books you open will appear here"))
             }
 
             vm.tab == Tab.SHELVES -> {
                 val shelves = shelvesFor(vm, books, recent)
                 val items = shelves.map { GroupItem(it.key, it.title, it.subtitle, it.books.size) } +
-                    GroupItem("new", "+ Новая полка", "своя подборка книг", 0)
+                    GroupItem("new", L("+ Новая полка", "+ New shelf"), L("своя подборка книг", "your own selection"), 0)
                 PagedGrid(
                     items = items,
                     page = vm.page(vm.mainKey),
@@ -270,7 +280,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         onLongClick = if (g.key.startsWith("shelf:")) {
                             {
                                 val name = g.key.removePrefix("shelf:")
-                                vm.overlay = Overlay.Choice("Полка «$name»", listOf("Удалить полку"), -1) { vm.deleteShelf(name) }
+                                vm.overlay = Overlay.Choice(L("Полка «$name»", "Shelf “$name”"), listOf(L("Удалить полку", "Delete shelf")), -1) { vm.deleteShelf(name) }
                             }
                         } else null,
                     )
@@ -286,7 +296,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                     onPage = { vm.setPage(key, it) },
                     minCellWidth = 10_000.dp,
                     cellHeight = { GROUP_ROW_HEIGHT },
-                    empty = if (vm.tab == Tab.SERIES) "Серий пока нет" else "Ничего не найдено",
+                    empty = if (vm.tab == Tab.SERIES) L("Серий пока нет", "No series yet") else L("Ничего не найдено", "Nothing found"),
                     leading = home,
                 ) { g -> GroupRow(g, onClick = { vm.openGroup(Group(vm.tab, it.key, it.title)) }) }
             }
@@ -331,7 +341,7 @@ private fun BookPages(
     open: (Book) -> Unit,
     details: (Book) -> Unit,
     leading: (@Composable () -> Unit)? = null,
-    empty: String = "Книги не найдены",
+    empty: String = L("Книги не найдены", "No books found"),
     // Серая строка под названием: по умолчанию автор, внутри автора — серия, внутри серии — номер
     subtitle: (Book) -> String = { it.authorsDisplay },
 ) {
@@ -370,7 +380,7 @@ private fun BookPages(
             ViewMode.COVERS_SMALL -> 6
             else -> null
         },
-        empty = if (vm.filtersActive) "Под фильтры ничего не подходит" else empty,
+        empty = if (vm.filtersActive) L("Под фильтры ничего не подходит", "Nothing matches the filters") else empty,
         leading = leading,
         prefetch = if (mode == ViewMode.COMPACT) null else { list ->
             CoverCache.prefetch(list.mapNotNull { if (it is SeriesStack) it.books.first() else it as? Book })
@@ -382,7 +392,7 @@ private fun BookPages(
         }
         if (item is SeriesStack) {
             val done = item.books.count { vm.statusOf(it) == ReadStatus.FINISHED }
-            val sub = booksWord(item.books.size) + if (done > 0) " · прочитано $done" else ""
+            val sub = booksWord(item.books.size) + if (done > 0) L(" · прочитано $done", " · $done finished") else ""
             val onClick = { vm.openGroup(Group(Tab.SERIES, item.key, item.name), keepTab = true) }
             if (mode.covers) StackTile(item.books.first(), item.name, sub, showText = mode != ViewMode.COVERS_ONLY, onClick = onClick)
             else StackRow(item.books.first(), item.name, sub, onClick)
@@ -417,7 +427,7 @@ private fun TopBar(vm: LibraryViewModel, total: Int, shown: Int) {
             vm.searchOpen -> SearchField(vm)
 
             group != null -> {
-                BarIcon(AppIcons.Back, "Назад") { vm.group = null }
+                BarIcon(AppIcons.Back, L("Назад", "Back")) { vm.group = null }
                 Text(
                     group.title, fontSize = 19.sp, fontWeight = FontWeight.Bold, maxLines = 1,
                     overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
@@ -430,7 +440,7 @@ private fun TopBar(vm: LibraryViewModel, total: Int, shown: Int) {
                 Row(
                     Modifier
                         .clickable {
-                            vm.overlay = Overlay.Choice("Показывать", Tab.entries.map { it.label }, vm.tab.ordinal) {
+                            vm.overlay = Overlay.Choice(L("Показывать", "Show"), Tab.entries.map { it.label }, vm.tab.ordinal) {
                                 vm.selectTab(Tab.entries[it])
                             }
                         }
@@ -441,11 +451,11 @@ private fun TopBar(vm: LibraryViewModel, total: Int, shown: Int) {
                     Icon(AppIcons.Chevron, null, tint = Ink, modifier = Modifier.padding(start = 4.dp).size(20.dp))
                 }
                 Text(
-                    scan?.let { if (it.total == 0) "поиск книг…" else "обновление ${it.done}/${it.total}" }
-                        ?: if (vm.filtersActive) "$shown из $total" else booksWord(total),
+                    scan?.let { if (it.total == 0) L("поиск книг…", "scanning…") else L("обновление ${it.done}/${it.total}", "updating ${it.done}/${it.total}") }
+                        ?: if (vm.filtersActive) L("$shown из $total", "$shown of $total") else booksWord(total),
                     fontSize = 13.sp, color = Gray, maxLines = 1, modifier = Modifier.weight(1f).padding(start = 4.dp),
                 )
-                BarIcon(AppIcons.Search, "Поиск") { vm.searchOpen = true }
+                BarIcon(AppIcons.Search, L("Поиск", "Search")) { vm.searchOpen = true }
                 OptionsIcon(vm)
             }
         }
@@ -457,7 +467,7 @@ private fun TopBar(vm: LibraryViewModel, total: Int, shown: Int) {
 @Composable
 private fun OptionsIcon(vm: LibraryViewModel) {
     Box {
-        BarIcon(AppIcons.Filter, "Вид, сортировка и фильтры") { vm.overlay = Overlay.ViewOptions }
+        BarIcon(AppIcons.Filter, L("Вид, сортировка и фильтры", "View, sort and filters")) { vm.overlay = Overlay.ViewOptions }
         if (vm.filtersActive) {
             Box(Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 8.dp).size(9.dp).background(Ink, CircleShape))
         }
@@ -477,7 +487,7 @@ private fun androidx.compose.foundation.layout.RowScope.SearchField(vm: LibraryV
     LaunchedEffect(Unit) { focus.requestFocus() }
     Icon(AppIcons.Search, null, tint = Ink, modifier = Modifier.padding(start = 10.dp, end = 8.dp).size(22.dp))
     Box(Modifier.weight(1f)) {
-        if (vm.query.isEmpty()) Text("Название, автор или серия", fontSize = 18.sp, color = Gray)
+        if (vm.query.isEmpty()) Text(L("Название, автор или серия", "Title, author or series"), fontSize = 18.sp, color = Gray)
         // Курсор прозрачный: мигание заставляло бы e-ink перерисовываться дважды в секунду
         BasicTextField(
             value = vm.query,
@@ -488,7 +498,7 @@ private fun androidx.compose.foundation.layout.RowScope.SearchField(vm: LibraryV
             modifier = Modifier.fillMaxWidth().focusRequester(focus),
         )
     }
-    BarIcon(AppIcons.Close, "Закрыть") { vm.closeSearch() }
+    BarIcon(AppIcons.Close, L("Закрыть", "Close")) { vm.closeSearch() }
 }
 
 // ---------- Главная страница ----------
@@ -520,13 +530,13 @@ private fun HomePage(
     }
     val current = byLast.firstOrNull()
     val others = byLast.drop(1)
-    val (shelfLabel, recentShelf) = if (others.isNotEmpty()) "Недавние" to others
-    else "Недавно добавленные" to all.sortedByDescending { it.modified }.filter { it != current }
+    val (shelfLabel, recentShelf) = if (others.isNotEmpty()) L("Недавние", "Recent") to others
+    else L("Недавно добавленные", "Recently added") to all.sortedByDescending { it.modified }.filter { it != current }
     val paths = remember(all) { all.mapTo(HashSet()) { it.path } }
     // Число из статистики чтения ONYX; если она недоступна — по отметкам «прочитано» в библиотеке
     val finished = vm.finishedTotal ?: vm.reading.count { (path, p) -> p.finished && path in paths }
         val today = remember {
-        SimpleDateFormat("EEEE, d MMMM", Locale("ru")).format(Date()).replaceFirstChar { it.uppercase() }
+        SimpleDateFormat(L("EEEE, d MMMM", "EEEE, MMMM d"), Lang.locale).format(Date()).replaceFirstChar { it.uppercase() }
     }
 
     val newest = remember(all) { all.filter { it.cover != null && it.format != "cbz" }.sortedByDescending { it.modified }.take(3) }
@@ -535,9 +545,9 @@ private fun HomePage(
         // Шапка: дата, статистика ONYX и поиск
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(today, fontSize = 17.sp, fontWeight = FontWeight.Medium, color = Gray, modifier = Modifier.weight(1f))
-            RoundAction(AppIcons.Stats, "Статистика чтения", onStats)
+            RoundAction(AppIcons.Stats, L("Статистика чтения", "Reading statistics"), onStats)
             Spacer(Modifier.width(10.dp))
-            RoundAction(AppIcons.Search, "Поиск", onSearch)
+            RoundAction(AppIcons.Search, L("Поиск", "Search"), onSearch)
         }
 
         // Сейчас читаю — большая обложка слева, забирает всё свободное место по высоте
@@ -548,7 +558,7 @@ private fun HomePage(
             )
         } else {
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text("Откройте любую книгу — она появится здесь", fontSize = 17.sp, color = Gray)
+                Text(L("Откройте любую книгу — она появится здесь", "Open any book and it will appear here"), fontSize = 17.sp, color = Gray)
             }
         }
 
@@ -571,23 +581,23 @@ private fun HomePage(
         // Полка внизу — тоже по настройкам
         val (shelfTitle, shelfBooks, shelfKey) = when (vm.homeShelf) {
             HomeShelf.RECENT -> Triple(shelfLabel, recentShelf, null)
-            HomeShelf.CONTINUE -> Triple("Продолжить серию", shelf("auto:continue")?.books.orEmpty(), "auto:continue")
-            HomeShelf.WANT -> Triple("Хочу прочитать", shelf("shelf:Хочу прочитать")?.books.orEmpty(), "shelf:Хочу прочитать")
-            HomeShelf.NEW -> Triple("Новые поступления", shelf("auto:new")?.books.orEmpty(), "auto:new")
+            HomeShelf.CONTINUE -> Triple(L("Продолжить серию", "Continue the series"), shelf("auto:continue")?.books.orEmpty(), "auto:continue")
+            HomeShelf.WANT -> Triple(L("Хочу прочитать", "Want to read"), shelf("shelf:Хочу прочитать")?.books.orEmpty(), "shelf:Хочу прочитать")
+            HomeShelf.NEW -> Triple(L("Новые поступления", "New arrivals"), shelf("auto:new")?.books.orEmpty(), "auto:new")
             HomeShelf.NONE -> Triple("", emptyList(), null)
         }
         if (vm.homeShelf != HomeShelf.NONE) {
             Row(Modifier.padding(top = 20.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(shelfTitle, fontSize = 19.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 Text(
-                    "Все ›", fontSize = 15.sp, color = OnFill,
+                    L("Все ›", "All ›"), fontSize = 15.sp, color = OnFill,
                     modifier = Modifier.clickable {
                         if (shelfKey == null) toRecent() else vm.openGroup(Group(Tab.SHELVES, shelfKey, shelfTitle))
                     }.padding(horizontal = 6.dp, vertical = 4.dp),
                 )
             }
             if (shelfBooks.isEmpty()) {
-                Text("Пока пусто", fontSize = 15.sp, color = Gray, modifier = Modifier.padding(top = 10.dp))
+                Text(L("Пока пусто", "Nothing here yet"), fontSize = 15.sp, color = Gray, modifier = Modifier.padding(top = 10.dp))
             } else {
                 Row(Modifier.padding(top = 10.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     for (i in 0 until 5) {
@@ -611,10 +621,10 @@ private fun TimeValue(ms: Long?) {
     Row(verticalAlignment = Alignment.Bottom) {
         if (h > 0) {
             BigNumber(h.toString())
-            Text("ч", fontSize = 15.sp, color = OnFill, modifier = Modifier.padding(start = 4.dp, end = 10.dp, bottom = 6.dp))
+            Text(L("ч", "h"), fontSize = 15.sp, color = OnFill, modifier = Modifier.padding(start = 4.dp, end = 10.dp, bottom = 6.dp))
         }
         BigNumber(m.toString())
-        Text("мин", fontSize = 15.sp, color = OnFill, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
+        Text(L("мин", "min"), fontSize = 15.sp, color = OnFill, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
     }
 }
 
@@ -655,10 +665,10 @@ private fun HomeWidgetTile(
     val onClick: () -> Unit = when (w) {
         HomeWidget.FINISHED, HomeWidget.TODAY, HomeWidget.WEEK -> onStats
         HomeWidget.LIBRARY -> toLibrary
-        HomeWidget.YEAR -> { { openShelf("auto:year", "Прочитано в этом году") } }
-        HomeWidget.READING -> { { openShelf("auto:reading", "Читаю сейчас") } }
-        HomeWidget.WANT -> { { openShelf("shelf:Хочу прочитать", "Хочу прочитать") } }
-        HomeWidget.CONTINUE -> { { next?.let(open) ?: openShelf("auto:continue", "Продолжить серию") } }
+        HomeWidget.YEAR -> { { openShelf("auto:year", L("Прочитано в этом году", "Finished this year")) } }
+        HomeWidget.READING -> { { openShelf("auto:reading", L("Читаю сейчас", "Currently reading")) } }
+        HomeWidget.WANT -> { { openShelf("shelf:Хочу прочитать", L("Хочу прочитать", "Want to read")) } }
+        HomeWidget.CONTINUE -> { { next?.let(open) ?: openShelf("auto:continue", L("Продолжить серию", "Continue the series")) } }
         HomeWidget.NONE -> { {} }
     }
     Column(
@@ -669,7 +679,7 @@ private fun HomeWidgetTile(
             Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                 Cover(next, Modifier.fillMaxHeight(), showFormat = false, radius = 7.dp)
                 Column(Modifier.padding(start = 14.dp)) {
-                    Caps("Продолжить серию")
+                    Caps(L("Продолжить серию", "Continue the series"))
                     Text(next.title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
                     next.seriesLabel?.let { Text(it, fontSize = 13.sp, color = OnFill, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 }
@@ -684,8 +694,8 @@ private fun HomeWidgetTile(
                 BigNumber(finished.toString())
                 vm.totalHours?.let { h ->
                     Box(Modifier.padding(horizontal = 16.dp).width(2.dp).height(42.dp).background(Muted, CircleShape))
-                    BigNumber(String.format(Locale("ru"), "%.1f", h))
-                    Text("ч", fontSize = 15.sp, color = OnFill, modifier = Modifier.align(Alignment.Bottom).padding(start = 6.dp, bottom = 6.dp))
+                    BigNumber(String.format(Lang.locale, "%.1f", h))
+                    Text(L("ч", "h"), fontSize = 15.sp, color = OnFill, modifier = Modifier.align(Alignment.Bottom).padding(start = 6.dp, bottom = 6.dp))
                 }
             }
             HomeWidget.LIBRARY -> CountWithFan(all.size, newest)
@@ -700,7 +710,7 @@ private fun HomeWidgetTile(
             }
             HomeWidget.READING -> shelf("auto:reading")?.books.orEmpty().let { CountWithFan(it.size, it) }
             HomeWidget.WANT -> shelf("shelf:Хочу прочитать")?.books.orEmpty().let { CountWithFan(it.size, it) }
-            HomeWidget.CONTINUE -> Text("Других книг для продолжения пока нет", fontSize = 15.sp, color = OnFill)
+            HomeWidget.CONTINUE -> Text(L("Других книг для продолжения пока нет", "Nothing else to continue yet"), fontSize = 15.sp, color = OnFill)
             HomeWidget.NONE -> {}
         }
     }
@@ -721,8 +731,8 @@ private fun ShelfCover(b: Book, p: Progress?, open: (Book) -> Unit, details: (Bo
         Cover(b, Modifier.fillMaxWidth(), showFormat = false, radius = 8.dp)
         Text(
             when {
-                p == null || p.total == 0 -> "Не начата"
-                p.finished -> "✓ Прочитано"
+                p == null || p.total == 0 -> L("Не начата", "Not started")
+                p.finished -> L("✓ Прочитано", "✓ Finished")
                 else -> "${p.percent}%"
             },
             fontSize = 12.sp, color = OnFill, maxLines = 1, modifier = Modifier.padding(top = 5.dp),
@@ -747,7 +757,7 @@ private fun NowReading(
     Row(Modifier.fillMaxSize().combinedClickable(onClick = { open(book) }, onLongClick = onDetails)) {
         Cover(book, Modifier.fillMaxHeight(), showFormat = false, radius = 12.dp)
         Column(Modifier.padding(start = 26.dp, top = 6.dp, bottom = 6.dp).weight(1f).fillMaxHeight()) {
-            Caps("Сейчас читаю")
+            Caps(L("Сейчас читаю", "Now reading"))
             Text(
                 book.title, fontSize = if (compact) 26.sp else 34.sp, lineHeight = if (compact) 30.sp else 38.sp,
                 fontWeight = FontWeight.Bold, fontFamily = InterDisplay,
@@ -764,13 +774,13 @@ private fun NowReading(
                 // Процент — над левым краем полоски, страницы — над правым, на одной линии
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
                     Text(
-                        if (progress.finished) "Прочитано" else "${progress.percent}%",
+                        if (progress.finished) L("Прочитано", "Finished") else "${progress.percent}%",
                         fontSize = if (compact) 34.sp else 52.sp, lineHeight = if (compact) 34.sp else 52.sp,
                         fontWeight = FontWeight.Bold, fontFamily = InterDisplay,
                         letterSpacing = (-1.5).sp, modifier = Modifier.weight(1f),
                     )
                     Text(
-                        "страница ${progress.current} из ${progress.total}", fontSize = 15.sp, color = Gray,
+                        L("страница ${progress.current} из ${progress.total}", "page ${progress.current} of ${progress.total}"), fontSize = 15.sp, color = Gray,
                         modifier = Modifier.padding(start = 8.dp, bottom = 6.dp),
                     )
                 }
@@ -780,7 +790,7 @@ private fun NowReading(
             }
             if (lastOpened > 0 && !compact) {
                 Text(
-                    "Открыта " + SimpleDateFormat("d MMMM в HH:mm", Locale("ru")).format(Date(lastOpened)),
+                    L("Открыта ", "Opened ") + SimpleDateFormat(L("d MMMM в HH:mm", "MMMM d 'at' HH:mm"), Lang.locale).format(Date(lastOpened)),
                     fontSize = 15.sp, color = Gray, modifier = Modifier.padding(top = 10.dp),
                 )
             }

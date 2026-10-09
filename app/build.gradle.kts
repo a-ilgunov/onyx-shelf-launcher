@@ -13,8 +13,8 @@ android {
         minSdk = 28
         // Android 11 на Kon-Tiki 5
         targetSdk = 30
-        versionCode = 25
-        versionName = "1.15"
+        versionCode = 26
+        versionName = "1.16"
     }
 
     buildTypes {

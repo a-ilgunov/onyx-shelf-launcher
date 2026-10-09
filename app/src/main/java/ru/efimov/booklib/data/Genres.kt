@@ -2,7 +2,61 @@ package ru.efimov.booklib.data
 
 /** Коды жанров FB2 → человеческие названия. Неизвестные коды показываются как есть. */
 object Genres {
-    fun name(code: String): String = names[code.lowercase()] ?: code
+    fun name(code: String): String {
+        val c = code.lowercase()
+        // Английские названия; неизвестный код превращаем в читаемый вид: sf_space → Sf space
+        return if (Lang.english) english[c] ?: c.replace('_', ' ').replaceFirstChar { it.uppercase() }
+        else names[c] ?: code
+    }
+
+    private val english = mapOf(
+        "sf" to "Science fiction", "sf_history" to "Alternate history", "sf_action" to "Action SF", "sf_epic" to "Epic SF",
+        "sf_heroic" to "Heroic SF", "sf_detective" to "SF detective", "sf_cyberpunk" to "Cyberpunk", "sf_space" to "Space fiction",
+        "sf_social" to "Social SF", "sf_horror" to "Horror", "sf_humor" to "Humorous SF", "sf_fantasy" to "Fantasy",
+        "sf_fantasy_city" to "Urban fantasy", "sf_postapocalyptic" to "Post-apocalyptic", "sf_mystic" to "Mysticism",
+        "sf_stimpank" to "Steampunk", "sf_etc" to "Speculative fiction", "fantasy_fight" to "Action fantasy",
+        "hronoopera" to "Time travel", "popadanec" to "Isekai", "litrpg" to "LitRPG", "detective" to "Detective",
+        "det_classic" to "Classic detective", "det_police" to "Police procedural", "det_action" to "Action",
+        "det_irony" to "Cozy mystery", "det_history" to "Historical mystery", "det_espionage" to "Spy fiction",
+        "det_crime" to "Crime", "det_political" to "Political thriller", "det_maniac" to "Serial killers",
+        "det_hard" to "Hardboiled", "thriller" to "Thriller", "prose" to "Fiction", "prose_classic" to "Classics",
+        "prose_history" to "Historical fiction", "prose_contemporary" to "Contemporary fiction", "prose_counter" to "Counterculture",
+        "prose_rus_classic" to "Russian classics", "prose_su_classics" to "Soviet classics", "prose_military" to "War fiction",
+        "love" to "Romance", "love_contemporary" to "Contemporary romance", "love_history" to "Historical romance",
+        "love_detective" to "Romantic suspense", "love_short" to "Short romance", "love_erotica" to "Erotica",
+        "adventure" to "Adventure", "adv_western" to "Western", "adv_history" to "Historical adventure",
+        "adv_indian" to "Frontier adventure", "adv_maritime" to "Sea adventure", "adv_geo" to "Travel",
+        "adv_animal" to "Nature and animals", "children" to "Children's", "child_tale" to "Fairy tales",
+        "child_verse" to "Children's poetry", "child_prose" to "Children's fiction", "child_sf" to "Children's SF",
+        "child_det" to "Children's mystery", "child_adv" to "Children's adventure", "child_education" to "Children's education",
+        "poetry" to "Poetry", "dramaturgy" to "Drama", "antique" to "Old literature", "antique_ant" to "Classical antiquity",
+        "antique_european" to "Old European literature", "antique_russian" to "Old Russian literature",
+        "antique_east" to "Old Eastern literature", "antique_myths" to "Myths and legends", "science" to "Science",
+        "sci_history" to "History", "sci_psychology" to "Psychology", "sci_culture" to "Cultural studies",
+        "sci_religion" to "Religious studies", "sci_philosophy" to "Philosophy", "sci_politics" to "Politics",
+        "sci_business" to "Business", "sci_juris" to "Law", "sci_linguistic" to "Linguistics", "sci_medicine" to "Medicine",
+        "sci_phys" to "Physics", "sci_math" to "Mathematics", "sci_chem" to "Chemistry", "sci_biology" to "Biology",
+        "sci_tech" to "Engineering", "sci_popular" to "Popular science", "computers" to "Computers", "comp_www" to "Internet",
+        "comp_programming" to "Programming", "comp_hard" to "Hardware", "comp_soft" to "Software", "comp_db" to "Databases",
+        "comp_osnet" to "OS and networks", "reference" to "Reference", "ref_encyc" to "Encyclopedias",
+        "ref_dict" to "Dictionaries", "ref_ref" to "Reference books", "ref_guide" to "Guides", "nonfiction" to "Nonfiction",
+        "nonf_biography" to "Biography and memoir", "nonf_publicism" to "Essays and journalism", "nonf_criticism" to "Criticism",
+        "design" to "Art and design", "religion" to "Religion and spirituality", "religion_rel" to "Religion",
+        "religion_esoterics" to "Esoterics", "religion_self" to "Self-improvement", "humor" to "Humor",
+        "humor_anecdote" to "Jokes", "humor_prose" to "Humorous fiction", "humor_verse" to "Humorous poetry",
+        "home" to "Home and family", "home_cooking" to "Cooking", "home_pets" to "Pets", "home_crafts" to "Hobbies and crafts",
+        "home_entertain" to "Entertainment", "home_health" to "Health", "home_garden" to "Gardening", "home_diy" to "DIY",
+        "home_sport" to "Sports", "home_sex" to "Sexuality", "economics" to "Economics", "military_history" to "Military history",
+        "psy_personal" to "Personal growth", "foreign_language" to "Foreign languages", "short_story" to "Short stories",
+        "essay" to "Essays", "other" to "Unsorted", "foreign_fantasy" to "Fantasy", "foreign_sf" to "Science fiction",
+        "foreign_detective" to "Detective", "foreign_action" to "Action", "foreign_prose" to "Fiction",
+        "foreign_contemporary" to "Contemporary fiction", "foreign_novel" to "Novel", "foreign_adventure" to "Adventure",
+        "foreign_love" to "Romance", "foreign_children" to "Children's", "foreign_poetry" to "Poetry",
+        "foreign_dramaturgy" to "Drama", "foreign_publicism" to "Essays and journalism", "foreign_antique" to "Old literature",
+        "foreign_edu" to "Education", "foreign_comp" to "Computers", "foreign_other" to "Other", "fantasy" to "Fantasy",
+        "sf_fantasy_irony" to "Comic fantasy", "sf_litrpg" to "LitRPG", "sf_realrpg" to "RealRPG",
+        "sf_technofantasy" to "Technofantasy", "dark_fantasy" to "Dark fantasy",
+    )
 
     private val names = mapOf(
         "sf" to "Научная фантастика",

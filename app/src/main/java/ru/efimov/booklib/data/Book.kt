@@ -15,7 +15,7 @@ data class Author(val first: String, val last: String) {
     val key: String get() = sortName.lowercase()
 
     companion object {
-        const val NO_AUTHOR = "Без автора"
+        val NO_AUTHOR: String get() = L("Без автора", "Unknown author")
 
         /** «Brandon Sanderson» или «Sanderson, Brandon». */
         fun parse(raw: String): Author {

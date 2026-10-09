@@ -1,5 +1,7 @@
 package ru.efimov.booklib.ui
 
+import ru.efimov.booklib.data.L
+import ru.efimov.booklib.data.Lang
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
@@ -134,7 +136,7 @@ private fun LargeTitle(text: String, subtitle: String? = null, onBack: (() -> Un
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(AppIcons.Back, null, tint = Ink, modifier = Modifier.size(20.dp))
-                Text("Назад", fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+                Text(L("Назад", "Back"), fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
             }
         } else {
             Text(subtitle ?: " ", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Gray)
@@ -240,16 +242,16 @@ private fun DetailsOverlay(vm: LibraryViewModel, book: Book) {
                     book.seriesLabel?.let { Text(it, fontSize = 15.sp, color = Gray, modifier = Modifier.padding(top = 2.dp)) }
                     if (progress != null && progress.total > 0) {
                         Text(
-                            if (progress.finished) "Прочитано" else "${progress.percent}% · стр. ${progress.current} из ${progress.total}",
+                            if (progress.finished) L("Прочитано", "Finished") else L("${progress.percent}% · стр. ${progress.current} из ${progress.total}", "${progress.percent}% · page ${progress.current} of ${progress.total}"),
                             fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp),
                         )
                     }
                     readMs?.takeIf { it >= 60_000 }?.let { ms ->
                         val h = ms / 3_600_000
                         val m = ms / 60_000 % 60
-                        val t = if (h > 0) "$h ч $m мин" else "$m мин"
+                        val t = if (h > 0) L("$h ч $m мин", "$h h $m min") else L("$m мин", "$m min")
                         Text(
-                            if (progress?.finished == true) "Прочитана за $t" else "Читаете $t",
+                            if (progress?.finished == true) L("Прочитана за $t", "Read in $t") else L("Читаете $t", "Reading for $t"),
                             fontSize = 15.sp, color = OnFill, modifier = Modifier.padding(top = 4.dp),
                         )
                     }
@@ -257,7 +259,7 @@ private fun DetailsOverlay(vm: LibraryViewModel, book: Book) {
                         Text(book.genreNames().joinToString(", "), fontSize = 14.sp, color = Gray, modifier = Modifier.padding(top = 10.dp))
                     }
                     Text(
-                        "${book.format.uppercase()} · ${"%.1f".format(book.size / 1048576.0)} МБ",
+                        "${book.format.uppercase()} · ${"%.1f".format(book.size / 1048576.0)} ${L("МБ", "MB")}",
                         fontSize = 14.sp, color = Gray, modifier = Modifier.padding(top = 4.dp),
                     )
                 }
@@ -275,8 +277,8 @@ private fun DetailsOverlay(vm: LibraryViewModel, book: Book) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    book.authors.forEach { a -> Chip("Все книги: ${a.display}") { close(); vm.openGroup(Group(Tab.AUTHORS, a.key, a.sortName)) } }
-                    book.seriesList.forEach { sr -> Chip("Серия «${sr.name}»") { close(); vm.openGroup(Group(Tab.SERIES, sr.key, sr.name)) } }
+                    book.authors.forEach { a -> Chip(L("Все книги: ${a.display}", "All by ${a.display}")) { close(); vm.openGroup(Group(Tab.AUTHORS, a.key, a.sortName)) } }
+                    book.seriesList.forEach { sr -> Chip(L("Серия «${sr.name}»", "Series “${sr.name}”")) { close(); vm.openGroup(Group(Tab.SERIES, sr.key, sr.name)) } }
                 }
             }
             Row(
@@ -284,13 +286,13 @@ private fun DetailsOverlay(vm: LibraryViewModel, book: Book) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PillButton("Читать", filled = true, modifier = Modifier.weight(0.8f)) { close(); vm.openBook(book) }
-                PillButton("Открыть в…", filled = false, modifier = Modifier.weight(1f)) { close(); vm.openBook(book, choose = true) }
-                RoundIconButton(AppIcons.Shelf, "На полку") { vm.chooseShelf(book) }
-                RoundIconButton(AppIcons.Image, "Сменить обложку") { vm.overlay = Overlay.CoverPicker(book) }
+                PillButton(L("Читать", "Read"), filled = true, modifier = Modifier.weight(0.8f)) { close(); vm.openBook(book) }
+                PillButton(L("Открыть в…", "Open in…"), filled = false, modifier = Modifier.weight(1f)) { close(); vm.openBook(book, choose = true) }
+                RoundIconButton(AppIcons.Shelf, L("На полку", "Add to shelf")) { vm.chooseShelf(book) }
+                RoundIconButton(AppIcons.Image, L("Сменить обложку", "Change cover")) { vm.overlay = Overlay.CoverPicker(book) }
                 // Только из списка «Недавние» — сам файл остаётся на месте
                 if (vm.lastOpened(book.path, vm.prefs.recent.value) > 0) {
-                    RoundIconButton(AppIcons.HideRecent, "Убрать из недавних") { close(); vm.hideFromRecent(book) }
+                    RoundIconButton(AppIcons.HideRecent, L("Убрать из недавних", "Remove from recent")) { close(); vm.hideFromRecent(book) }
                 }
             }
         }
@@ -304,7 +306,7 @@ private fun DetailsOverlay(vm: LibraryViewModel, book: Book) {
 private fun AppsScreen(vm: LibraryViewModel) {
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize()) {
-        LargeTitle("Приложения", vm.apps.size.takeIf { it > 0 }?.let { "$it установлено" })
+        LargeTitle(L("Приложения", "Apps"), vm.apps.size.takeIf { it > 0 }?.let { L("$it установлено", "$it installed") })
         PagedGrid(
             items = vm.apps,
             page = vm.page("apps"),
@@ -349,9 +351,9 @@ fun launch(ctx: Context, intent: Intent) {
     try {
         ctx.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     } catch (e: ActivityNotFoundException) {
-        Toast.makeText(ctx, "Не удалось открыть", Toast.LENGTH_SHORT).show()
+        Toast.makeText(ctx, L("Не удалось открыть", "Couldn't open"), Toast.LENGTH_SHORT).show()
     } catch (e: SecurityException) {
-        Toast.makeText(ctx, "Нет доступа", Toast.LENGTH_SHORT).show()
+        Toast.makeText(ctx, L("Нет доступа", "No access"), Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -375,7 +377,7 @@ private fun StorageScreen(vm: LibraryViewModel) {
         if (atRoot) {
             val free = vm.storageRoot.usableSpace / 1_073_741_824.0
             val total = vm.storageRoot.totalSpace / 1_073_741_824.0
-            LargeTitle("Память", "Свободно %.1f из %.0f ГБ".format(free, total))
+            LargeTitle(L("Память", "Storage"), L("Свободно %.1f из %.0f ГБ", "%.1f of %.0f GB free").format(free, total))
         } else {
             LargeTitle(dir.name) { vm.storageDir = dir.parentFile ?: vm.storageRoot }
         }
@@ -385,11 +387,11 @@ private fun StorageScreen(vm: LibraryViewModel) {
             onPage = { vm.setPage("dir:${dir.path}", it) },
             minCellWidth = 10_000.dp,
             cellHeight = { 66.dp },
-            empty = "Папка пуста",
+            empty = L("Папка пуста", "Folder is empty"),
         ) { f ->
             val info = if (f.isDirectory) "" else {
                 val size = f.length()
-                if (size >= 1_048_576) "%.1f МБ".format(size / 1_048_576.0) else "${size / 1024} КБ"
+                if (size >= 1_048_576) L("%.1f МБ", "%.1f MB").format(size / 1_048_576.0) else L("${size / 1024} КБ", "${size / 1024} KB")
             }
             FileRow(f.name, info, f.isDirectory) {
                 if (f.isDirectory) {
@@ -440,54 +442,57 @@ private fun SettingsScreen(vm: LibraryViewModel) {
     val scan by vm.library.scan.collectAsState()
 
     val groups = listOf(
-        "Библиотека" to listOf(
-            SettingItem("Чем открывать книги", Readers.label(ctx, vm.readerPackage)) {
+        L("Библиотека", "Library") to listOf(
+            SettingItem(L("Чем открывать книги", "Open books with"), Readers.label(ctx, vm.readerPackage)) {
                 val readers = Readers.list(ctx)
                 val options = listOf<String?>(null) + readers.map { it.pkg }
                 vm.overlay = Overlay.Choice(
-                    "Чем открывать книги",
-                    listOf("Запоминать последний выбор") + readers.map { it.label },
+                    L("Чем открывать книги", "Open books with"),
+                    listOf(L("Запоминать последний выбор", "Remember last choice")) + readers.map { it.label },
                     options.indexOf(vm.readerPackage).coerceAtLeast(0),
                 ) { vm.setReader(options[it]) }
             },
-            SettingItem("Обновить библиотеку", scan?.let { "Идёт поиск: ${it.done} из ${it.total}" } ?: "Найти новые книги в памяти") { vm.rescan() },
+            SettingItem(L("Обновить библиотеку", "Refresh library"), scan?.let { L("Идёт поиск: ${it.done} из ${it.total}", "Scanning: ${it.done} of ${it.total}") } ?: L("Найти новые книги в памяти", "Find new books on the device")) { vm.rescan() },
             SettingItem(
-                "Уточнить серии через интернет",
-                vm.seriesFix?.let { "Сверяю с Фантлабом: ${it.first} из ${it.second}" }
-                    ?: vm.library.seriesFixedCount.takeIf { it > 0 }?.let { "Фантлаб · уточнено ${booksWord(it)} · долгое нажатие — сбросить" }
-                    ?: "Сверить циклы и номера книг с Фантлабом",
+                L("Уточнить серии через интернет", "Check series online"),
+                vm.seriesFix?.let { L("Сверяю с Фантлабом: ${it.first} из ${it.second}", "Checking with Fantlab: ${it.first} of ${it.second}") }
+                    ?: vm.library.seriesFixedCount.takeIf { it > 0 }?.let { L("Фантлаб · уточнено ${booksWord(it)} · долгое нажатие — сбросить", "Fantlab · ${booksWord(it)} updated · long press to reset") }
+                    ?: L("Сверить циклы и номера книг с Фантлабом", "Match cycles and book numbers with Fantlab"),
                 onLong = if (vm.library.seriesFixedCount > 0) {
-                    { vm.overlay = Overlay.Choice("Уточнения серий", listOf("Сбросить все уточнения"), -1) { vm.clearSeriesFixes() } }
+                    { vm.overlay = Overlay.Choice(L("Уточнения серий", "Series corrections"), listOf(L("Сбросить все уточнения", "Reset all corrections")), -1) { vm.clearSeriesFixes() } }
                 } else null,
             ) { vm.fixSeriesOnline() },
             SettingItem(
-                "Найти дубликаты",
-                vm.hiddenBooks.size.takeIf { it > 0 }?.let { "Скрыто ${booksWord(it)} · долгое нажатие — вернуть" } ?: "Одинаковые книги в разных файлах",
+                L("Найти дубликаты", "Find duplicates"),
+                vm.hiddenBooks.size.takeIf { it > 0 }?.let { L("Скрыто ${booksWord(it)} · долгое нажатие — вернуть", "${booksWord(it)} hidden · long press to restore") } ?: L("Одинаковые книги в разных файлах", "Same book in different files"),
                 onLong = if (vm.hiddenBooks.isNotEmpty()) {
-                    { vm.overlay = Overlay.Choice("Скрытые книги", listOf("Вернуть все скрытые книги"), -1) { vm.unhideAll() } }
+                    { vm.overlay = Overlay.Choice(L("Скрытые книги", "Hidden books"), listOf(L("Вернуть все скрытые книги", "Restore all hidden books")), -1) { vm.unhideAll() } }
                 } else null,
             ) { vm.overlay = Overlay.Duplicates },
         ),
-        "Устройство" to listOf(
+        L("Устройство", "Device") to listOf(
             SettingItem("Wi-Fi") { launch(ctx, Intent(Settings.ACTION_WIFI_SETTINGS)) },
             SettingItem("Bluetooth") { launch(ctx, Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },
-            SettingItem("Экран и яркость") { launch(ctx, Intent(Settings.ACTION_DISPLAY_SETTINGS)) },
-            SettingItem("Все настройки") { launch(ctx, Intent(Settings.ACTION_SETTINGS)) },
+            SettingItem(L("Экран и яркость", "Display")) { launch(ctx, Intent(Settings.ACTION_DISPLAY_SETTINGS)) },
+            SettingItem(L("Все настройки", "All settings")) { launch(ctx, Intent(Settings.ACTION_SETTINGS)) },
         ),
-        "Главный экран" to listOf(
-            SettingItem("Настроить главный экран", "Плитки и полка внизу") { vm.overlay = Overlay.HomeEditor },
-            SettingItem("Тёмная тема", if (Palette.dark) "Включена · обложки не инвертируются" else "Выключена") { vm.toggleDark() },
-            SettingItem("Открыть лаунчер ONYX", "Настройки Boox, магазин, облако") {
+        L("Оформление", "Appearance") to listOf(
+            SettingItem(L("Тёмная тема", "Dark theme") + " · " + if (Palette.dark) L("вкл", "on") else L("выкл", "off")) { vm.toggleDark() },
+            SettingItem(if (Lang.english) "Language · English" else "Язык · Русский") { vm.toggleLanguage() },
+        ),
+        L("Главный экран", "Home screen") to listOf(
+            SettingItem(L("Настроить главный экран", "Customize home screen"), L("Плитки и полка внизу", "Tiles and bottom shelf")) { vm.overlay = Overlay.HomeEditor },
+            SettingItem(L("Открыть лаунчер ONYX", "Open ONYX launcher"), L("Настройки Boox, магазин, облако", "Boox settings, store, cloud")) {
                 launch(ctx, Intent(Intent.ACTION_MAIN).setComponent(ComponentName("com.onyx", "com.onyx.StartupActivity")))
             },
-            SettingItem("Выбрать главный экран", "Чтобы вернуть ONYX, выберите его здесь") {
+            SettingItem(L("Выбрать главный экран", "Choose home app"), L("Чтобы вернуть ONYX, выберите его здесь", "To go back to ONYX, choose it here")) {
                 launch(ctx, Intent(Settings.ACTION_HOME_SETTINGS))
             },
         ),
     )
 
     Column(Modifier.fillMaxSize()) {
-        LargeTitle("Настройки", "Моя библиотека ${BuildConfig.VERSION_NAME}")
+        LargeTitle(L("Настройки", "Settings"), L("Моя библиотека", "My Library") + " ${BuildConfig.VERSION_NAME}")
         // Все настройки помещаются на один экран — без прокрутки
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             groups.forEach { (title, items) ->
@@ -496,7 +501,7 @@ private fun SettingsScreen(vm: LibraryViewModel) {
                         title.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = OnFill, letterSpacing = 0.7.sp,
                         modifier = Modifier.padding(start = 20.dp, bottom = 6.dp),
                     )
-                    if (title == "Устройство") {
+                    if (title == L("Устройство", "Device") || title == L("Оформление", "Appearance")) {
                         // Короткие пункты — кнопками по две в ряд, чтобы настройки помещались на экран
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             items.chunked(2).forEach { pair ->
@@ -577,16 +582,16 @@ private fun CoverPicker(vm: LibraryViewModel, book: Book) {
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
     ) {
         val status = when {
-            !online -> "Включите Wi-Fi, чтобы искать обложки изданий в интернете"
-            web == null -> "Ищу обложки изданий в интернете…"
-            web!!.isEmpty() -> "В интернете обложек не нашлось"
-            else -> "Из интернета: ${web!!.size} · дальше — картинки с устройства"
+            !online -> L("Включите Wi-Fi, чтобы искать обложки изданий в интернете", "Turn on Wi-Fi to search edition covers online")
+            web == null -> L("Ищу обложки изданий в интернете…", "Searching edition covers online…")
+            web!!.isEmpty() -> L("В интернете обложек не нашлось", "No covers found online")
+            else -> L("Из интернета: ${web!!.size} · дальше — картинки с устройства", "Online: ${web!!.size} · then images from the device")
         }
-        LargeTitle("Обложка", book.title, onBack = back)
+        LargeTitle(L("Обложка", "Cover"), book.title, onBack = back)
         Text(status, fontSize = 14.sp, color = OnFill, modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 6.dp))
         Box(Modifier.weight(1f)) {
             if (images == null) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Ищу картинки в памяти…", fontSize = 17.sp, color = Gray) }
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(L("Ищу картинки в памяти…", "Looking for images…"), fontSize = 17.sp, color = Gray) }
             } else {
                 val items: List<Any> = web.orEmpty() + images!!
                 PagedGrid(
@@ -596,7 +601,7 @@ private fun CoverPicker(vm: LibraryViewModel, book: Book) {
                     minCellWidth = 130.dp,
                     cellHeight = { w -> (w - 16.dp) * 1.5f + 34.dp },
                     rows = 3,
-                    empty = "Картинок не найдено. Положите изображение в папку с книгой или в «Обложки».",
+                    empty = L("Картинок не найдено. Положите изображение в папку с книгой или в «Обложки».", "No images found. Put a picture next to the book or into the “Обложки” folder."),
                 ) { item ->
                     when (item) {
                         is ru.efimov.booklib.data.OnlineCover -> OnlineThumb(item) { vm.setCoverFromUrl(book, item.url) }
@@ -607,7 +612,7 @@ private fun CoverPicker(vm: LibraryViewModel, book: Book) {
         }
         if (vm.library.hasCustomCover(book.path)) {
             PillButton(
-                "Вернуть исходную обложку", filled = false,
+                L("Вернуть исходную обложку", "Restore original cover"), filled = false,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp).fillMaxWidth(),
             ) { vm.resetCover(book) }
         }
@@ -633,7 +638,7 @@ private fun OnlineThumb(cover: ru.efimov.booklib.data.OnlineCover, onPick: () ->
             if (b != null) Image(b, null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize())
             else Text("…", fontSize = 18.sp, color = Gray)
         }
-        Text(cover.label.ifEmpty { "Издание" }, fontSize = 11.sp, color = OnFill, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
+        Text(cover.label.ifEmpty { L("Издание", "Edition") }, fontSize = 11.sp, color = OnFill, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
     }
 }
 
@@ -688,29 +693,29 @@ private fun ViewOptionsOverlay(vm: LibraryViewModel) {
     val close = { vm.overlay = null }
     Scrim(close) {
         Column(Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
-            Text("Вид и фильтры", fontSize = 24.sp, fontWeight = FontWeight.Bold, fontFamily = InterDisplay)
+            Text(L("Вид и фильтры", "View and filters"), fontSize = 24.sp, fontWeight = FontWeight.Bold, fontFamily = InterDisplay)
 
-            OptionSection("Вид") {
+            OptionSection(L("Вид", "View")) {
                 ru.efimov.booklib.data.ViewMode.entries.forEach { v -> OptionChip(v.label, v == vm.viewMode) { vm.setView(v) } }
-                OptionChip("Серии стопкой", vm.seriesStacks) { vm.toggleStacks() }
+                OptionChip(L("Серии стопкой", "Stack series"), vm.seriesStacks) { vm.toggleStacks() }
             }
-            OptionSection("Сортировка") {
+            OptionSection(L("Сортировка", "Sort")) {
                 ru.efimov.booklib.data.SortMode.entries.forEach { m -> OptionChip(m.label, m == vm.sort) { vm.setSortMode(m) } }
-                OptionChip(if (vm.sortDesc) "↑ Обратный порядок" else "↓ Обычный порядок", vm.sortDesc) { vm.toggleSortDesc() }
+                OptionChip(if (vm.sortDesc) L("↑ Обратный порядок", "↑ Reversed") else L("↓ Обычный порядок", "↓ Normal order"), vm.sortDesc) { vm.toggleSortDesc() }
             }
-            OptionSection("Статус") {
+            OptionSection(L("Статус", "Status")) {
                 ru.efimov.booklib.data.ReadStatus.entries.forEach { st -> OptionChip(st.label, st in vm.filterStatus) { vm.toggleStatus(st) } }
             }
             if (formats.size > 1) {
-                OptionSection("Формат") { formats.forEach { f -> OptionChip(f.uppercase(), f in vm.filterFormats) { vm.toggleFormat(f) } } }
+                OptionSection(L("Формат", "Format")) { formats.forEach { f -> OptionChip(f.uppercase(), f in vm.filterFormats) { vm.toggleFormat(f) } } }
             }
             if (langs.size > 1) {
-                OptionSection("Язык") { langs.forEach { l -> OptionChip(langLabel(l), l in vm.filterLangs) { vm.toggleLang(l) } } }
+                OptionSection(L("Язык", "Language")) { langs.forEach { l -> OptionChip(langLabel(l), l in vm.filterLangs) { vm.toggleLang(l) } } }
             }
 
             Row(Modifier.padding(top = 24.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PillButton("Сбросить фильтры", filled = false, modifier = Modifier.weight(1f)) { vm.resetFilters() }
-                PillButton("Готово", filled = true, modifier = Modifier.weight(1f), onClick = close)
+                PillButton(L("Сбросить фильтры", "Reset filters"), filled = false, modifier = Modifier.weight(1f)) { vm.resetFilters() }
+                PillButton(L("Готово", "Done"), filled = true, modifier = Modifier.weight(1f), onClick = close)
             }
         }
     }
@@ -726,12 +731,12 @@ private fun NewShelfOverlay(vm: LibraryViewModel, book: Book?) {
     val close = { vm.overlay = null }
     Scrim(close) {
         Column(Modifier.padding(24.dp)) {
-            Text("Новая полка", fontSize = 24.sp, fontWeight = FontWeight.Bold, fontFamily = InterDisplay)
+            Text(L("Новая полка", "New shelf"), fontSize = 24.sp, fontWeight = FontWeight.Bold, fontFamily = InterDisplay)
             Box(
                 Modifier.padding(top = 16.dp).fillMaxWidth().height(54.dp).background(Fill, RoundedCornerShape(16.dp)).padding(horizontal = 18.dp),
                 contentAlignment = Alignment.CenterStart,
             ) {
-                if (name.isEmpty()) Text("Например, «На отпуск»", fontSize = 18.sp, color = Gray)
+                if (name.isEmpty()) Text(L("Например, «На отпуск»", "For example, “Vacation”"), fontSize = 18.sp, color = Gray)
                 // Курсор прозрачный — мигание заставляло бы e-ink перерисовываться
                 androidx.compose.foundation.text.BasicTextField(
                     value = name, onValueChange = { name = it }, singleLine = true,
@@ -741,8 +746,8 @@ private fun NewShelfOverlay(vm: LibraryViewModel, book: Book?) {
                 )
             }
             Row(Modifier.padding(top = 20.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PillButton("Отмена", filled = false, modifier = Modifier.weight(1f), onClick = close)
-                PillButton("Создать", filled = true, modifier = Modifier.weight(1f)) { vm.createShelf(name, book); close() }
+                PillButton(L("Отмена", "Cancel"), filled = false, modifier = Modifier.weight(1f), onClick = close)
+                PillButton(L("Создать", "Create"), filled = true, modifier = Modifier.weight(1f)) { vm.createShelf(name, book); close() }
             }
         }
     }
@@ -768,14 +773,14 @@ private fun DuplicatesScreen(vm: LibraryViewModel) {
         Modifier.fillMaxSize().background(Paper)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
     ) {
-        LargeTitle("Дубликаты", if (copies.isEmpty()) "Повторов не найдено" else "Найдено ${booksWord(copies.size)} с повторами") { vm.overlay = null }
+        LargeTitle(L("Дубликаты", "Duplicates"), if (copies.isEmpty()) L("Повторов не найдено", "No duplicates found") else L("Найдено ${booksWord(copies.size)} с повторами", "${booksWord(copies.size)} with duplicates")) { vm.overlay = null }
         PagedGrid(
             items = copies,
             page = vm.page("dups"),
             onPage = { vm.setPage("dups", it) },
             minCellWidth = 10_000.dp,
             cellHeight = { 108.dp },
-            empty = "Одинаковых книг нет",
+            empty = L("Одинаковых книг нет", "No identical books"),
         ) { b ->
             val p = vm.reading[b.path]
             Column(Modifier.fillMaxSize()) {
@@ -785,8 +790,8 @@ private fun DuplicatesScreen(vm: LibraryViewModel) {
                         Text(b.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(b.path.removePrefix(vm.storageRoot.path + "/"), fontSize = 12.sp, color = Gray, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         Text(
-                            "${b.format.uppercase()} · ${"%.1f".format(b.size / 1048576.0)} МБ" +
-                                (p?.takeIf { it.total > 0 }?.let { if (it.finished) " · прочитано" else " · ${it.percent}%" } ?: ""),
+                            "${b.format.uppercase()} · ${"%.1f".format(b.size / 1048576.0)} ${L("МБ", "MB")}" +
+                                (p?.takeIf { it.total > 0 }?.let { if (it.finished) L(" · прочитано", " · finished") else " · ${it.percent}%" } ?: ""),
                             fontSize = 12.sp, color = OnFill,
                         )
                     }
@@ -794,7 +799,7 @@ private fun DuplicatesScreen(vm: LibraryViewModel) {
                         Modifier.padding(start = 10.dp).height(40.dp).background(Fill, RoundedCornerShape(20.dp))
                             .clickable { vm.hideBook(b) }.padding(horizontal = 16.dp),
                         contentAlignment = Alignment.Center,
-                    ) { Text("Скрыть", fontSize = 15.sp) }
+                    ) { Text(L("Скрыть", "Hide"), fontSize = 15.sp) }
                 }
                 HorizontalDivider(color = LightGray)
             }
@@ -808,18 +813,18 @@ private fun DuplicatesScreen(vm: LibraryViewModel) {
 private fun HomeEditorScreen(vm: LibraryViewModel) {
     val widgets = ru.efimov.booklib.data.HomeWidget.entries
     val shelves = ru.efimov.booklib.data.HomeShelf.entries
-    val places = listOf("Верхний ряд, слева", "Верхний ряд, справа", "Нижний ряд, слева", "Нижний ряд, справа")
+    val places = listOf(L("Верхний ряд, слева", "Top row, left"), L("Верхний ряд, справа", "Top row, right"), L("Нижний ряд, слева", "Bottom row, left"), L("Нижний ряд, справа", "Bottom row, right"))
     val groups = listOf(
-        "Плитки" to places.mapIndexed { i, place ->
+        L("Плитки", "Tiles") to places.mapIndexed { i, place ->
             SettingItem(place, vm.homeWidgets[i].label) {
                 vm.overlay = Overlay.Choice(place, widgets.map { it.label }, widgets.indexOf(vm.homeWidgets[i]), under = Overlay.HomeEditor) {
                     vm.setHomeWidget(i, widgets[it])
                 }
             }
         },
-        "Полка внизу" to listOf(
-            SettingItem("Что показывать", vm.homeShelf.label) {
-                vm.overlay = Overlay.Choice("Полка внизу", shelves.map { it.label }, shelves.indexOf(vm.homeShelf), under = Overlay.HomeEditor) {
+        L("Полка внизу", "Bottom shelf") to listOf(
+            SettingItem(L("Что показывать", "What to show"), vm.homeShelf.label) {
+                vm.overlay = Overlay.Choice(L("Полка внизу", "Bottom shelf"), shelves.map { it.label }, shelves.indexOf(vm.homeShelf), under = Overlay.HomeEditor) {
                     vm.chooseHomeShelf(shelves[it])
                 }
             },
@@ -829,7 +834,7 @@ private fun HomeEditorScreen(vm: LibraryViewModel) {
         Modifier.fillMaxSize().background(Paper)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
     ) {
-        LargeTitle("Главный экран", "Пустой ряд плиток скрывается, «Сейчас читаю» становится крупнее") { vm.overlay = null }
+        LargeTitle(L("Главный экран", "Home screen"), L("Пустой ряд плиток скрывается, «Сейчас читаю» становится крупнее", "An empty row of tiles is hidden and “Now reading” gets bigger")) { vm.overlay = null }
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             groups.forEach { (title, items) ->
                 Column {

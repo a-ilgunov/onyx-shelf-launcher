@@ -1,5 +1,6 @@
 package ru.efimov.booklib.ui
 
+import ru.efimov.booklib.data.L
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.LruCache
@@ -226,7 +227,7 @@ fun Cover(
         if (progress != null && progress.total > 0) {
             // Метка всегда в одну строку: на узкой обложке от «Прочитано» остаётся только галочка
             Text(
-                if (progress.finished) (if (maxWidth >= 118.dp) "✓ Прочитано" else "✓") else "${progress.percent}%",
+                if (progress.finished) (if (maxWidth >= 118.dp) L("✓ Прочитано", "✓ Finished") else "✓") else "${progress.percent}%",
                 color = Paper, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
                 modifier = Modifier.align(Alignment.BottomStart).padding(6.dp)
                     .background(Ink, RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 2.dp),
@@ -397,14 +398,14 @@ fun BookDetailedRow(book: Book, progress: Progress?, genres: String?, onOpen: (B
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         when {
-                            progress == null || progress.total == 0 -> "Не начата"
-                            progress.finished -> "✓ Прочитано"
-                            else -> "${progress.percent}% · стр. ${progress.current} из ${progress.total}"
+                            progress == null || progress.total == 0 -> L("Не начата", "Not started")
+                            progress.finished -> L("✓ Прочитано", "✓ Finished")
+                            else -> L("${progress.percent}% · стр. ${progress.current} из ${progress.total}", "${progress.percent}% · page ${progress.current} of ${progress.total}")
                         },
                         fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f),
                     )
                     Text(
-                        "${book.format.uppercase()} · ${"%.1f".format(book.size / 1048576.0)} МБ",
+                        "${book.format.uppercase()} · ${"%.1f".format(book.size / 1048576.0)} ${L("МБ", "MB")}",
                         fontSize = 12.sp, color = Gray,
                     )
                 }
@@ -481,7 +482,7 @@ fun StackRow(first: Book, name: String, subtitle: String, onClick: () -> Unit) {
         ) {
             Cover(first, Modifier.width(48.dp), showFormat = false, radius = 6.dp)
             Column(Modifier.padding(start = 14.dp).weight(1f)) {
-                Text("Серия «$name»", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(L("Серия «$name»", "Series “$name”"), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(subtitle, fontSize = 13.sp, color = Gray, maxLines = 1)
             }
             Text("›", fontSize = 22.sp, color = Gray)
@@ -506,7 +507,7 @@ fun MissingTile(work: ru.efimov.booklib.data.CycleWork, showText: Boolean) {
                 }
             }
         },
-        caption = { if (showText) TileCaption(work.title, "Нет на книге") },
+        caption = { if (showText) TileCaption(work.title, L("Нет на книге", "Not on device")) },
     )
 }
 
@@ -516,7 +517,7 @@ fun MissingRow(work: ru.efimov.booklib.data.CycleWork) {
         Row(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("№ ${work.index}", fontSize = 14.sp, color = Gray, modifier = Modifier.width(48.dp))
             Text(work.title, fontSize = 16.sp, color = Gray, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-            Text("нет на устройстве", fontSize = 13.sp, color = Gray)
+            Text(L("нет на устройстве", "not on device"), fontSize = 13.sp, color = Gray)
         }
         HorizontalDivider(color = LightGray)
     }

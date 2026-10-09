@@ -6,6 +6,8 @@
 
 Сделан и проверен на **BOOX Kon‑Tiki 5** (Android 11). Должен работать и на других BOOX с Android 11 и новее.
 
+**[⬇ Скачать APK](https://github.com/ysagisan/onyxboox_custom_launcher-/raw/main/apk/onyx-shelf-launcher.apk)** · v1.15
+
 <p align="center">
   <img src="docs/screenshots/home.png" width="32%" alt="Главный экран">
   <img src="docs/screenshots/library.png" width="32%" alt="Библиотека">
@@ -59,7 +61,7 @@
 
 ## Установка
 
-1. Скачайте `onyx-shelf-launcher.apk` из [последнего релиза](../../releases/latest).
+1. **[Скачайте onyx-shelf-launcher.apk](https://github.com/ysagisan/onyxboox_custom_launcher-/raw/main/apk/onyx-shelf-launcher.apk)** (v1.15, 3,3 МБ) — готовый файл для установки, ничего собирать не нужно. Он же лежит в папке [`apk`](apk).
 2. Перенесите файл на книгу (кабелем, через BooxDrop или облако) и откройте его в разделе **Память**, чтобы установить. Если система спросит, разрешите установку из неизвестных источников.
    С компьютера можно так: `adb install onyx-shelf-launcher.apk`
 3. Откройте **Моя библиотека** и выдайте доступ **ко всем файлам**: без него приложение не найдёт книги в памяти.
